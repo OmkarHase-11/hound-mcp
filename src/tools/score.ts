@@ -16,11 +16,16 @@ function letterGrade(score: number): string {
 
 function gradeEmoji(grade: string): string {
   switch (grade) {
-    case "A": return "🟢";
-    case "B": return "🟡";
-    case "C": return "🟠";
-    case "D": return "🔴";
-    default:  return "💀";
+    case "A":
+      return "🟢";
+    case "B":
+      return "🟡";
+    case "C":
+      return "🟠";
+    case "D":
+      return "🔴";
+    default:
+      return "💀";
   }
 }
 
@@ -71,10 +76,18 @@ export function register(server: McpServer) {
       for (const v of vulns) {
         const sev = extractSeverity(v);
         switch (sev) {
-          case "CRITICAL": vulnScore -= 20; break;
-          case "HIGH":     vulnScore -= 10; break;
-          case "MODERATE": vulnScore -= 5;  break;
-          case "LOW":      vulnScore -= 2;  break;
+          case "CRITICAL":
+            vulnScore -= 20;
+            break;
+          case "HIGH":
+            vulnScore -= 10;
+            break;
+          case "MODERATE":
+            vulnScore -= 5;
+            break;
+          case "LOW":
+            vulnScore -= 2;
+            break;
         }
       }
       vulnScore = Math.max(0, vulnScore);
@@ -92,8 +105,10 @@ export function register(server: McpServer) {
       const daysSince = Math.floor(
         (Date.now() - new Date(pkg.publishedAt).getTime()) / (1000 * 60 * 60 * 24),
       );
-      if (daysSince > 730) recencyScore = 5;       // >2 years
-      else if (daysSince > 365) recencyScore = 10; // >1 year
+      if (daysSince > 730)
+        recencyScore = 5; // >2 years
+      else if (daysSince > 365)
+        recencyScore = 10; // >1 year
       else if (daysSince > 180) recencyScore = 15; // >6 months
 
       // 4. License score (0-15 points)
@@ -132,7 +147,9 @@ export function register(server: McpServer) {
           const sev = extractSeverity(v);
           counts[sev] = (counts[sev] ?? 0) + 1;
         }
-        const summary = Object.entries(counts).map(([s, n]) => `${n} ${s.toLowerCase()}`).join(", ");
+        const summary = Object.entries(counts)
+          .map(([s, n]) => `${n} ${s.toLowerCase()}`)
+          .join(", ");
         lines.push(`⚠️  ${vulns.length} known vuln(s): ${summary}`);
       } else {
         lines.push("✅ No known vulnerabilities");

@@ -118,16 +118,12 @@ export function register(server: McpServer) {
       }
       if (!dataA) {
         return {
-          content: [
-            { type: "text", text: `Could not find ${package_a} in ${ecosystem}.` },
-          ],
+          content: [{ type: "text", text: `Could not find ${package_a} in ${ecosystem}.` }],
         };
       }
       if (!dataB) {
         return {
-          content: [
-            { type: "text", text: `Could not find ${package_b} in ${ecosystem}.` },
-          ],
+          content: [{ type: "text", text: `Could not find ${package_b} in ${ecosystem}.` }],
         };
       }
 
@@ -175,9 +171,7 @@ export function register(server: McpServer) {
       const stA = dataA.stars !== null ? dataA.stars.toLocaleString() : "N/A";
       const stB = dataB.stars !== null ? dataB.stars.toLocaleString() : "N/A";
       const [wStA, wStB] =
-        dataA.stars !== null && dataB.stars !== null
-          ? winner(dataA.stars, dataB.stars)
-          : ["", ""];
+        dataA.stars !== null && dataB.stars !== null ? winner(dataA.stars, dataB.stars) : ["", ""];
       lines.push(row("GitHub stars", stA, stB, wStA, wStB));
 
       // Recency

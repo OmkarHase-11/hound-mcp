@@ -70,7 +70,11 @@ export function register(server: McpServer) {
 
       // Batch query OSV
       const vulnResults = await queryVulnsBatch(
-        toCheck.map((d) => ({ ecosystem: d.ecosystem as Ecosystem, name: d.name, version: d.version })),
+        toCheck.map((d) => ({
+          ecosystem: d.ecosystem as Ecosystem,
+          name: d.name,
+          version: d.version,
+        })),
       );
 
       // Build vulnerability findings
@@ -118,7 +122,9 @@ export function register(server: McpServer) {
       if (totalVulns === 0) {
         lines.push("✅ No known vulnerabilities found!");
       } else {
-        lines.push(`Found ${totalVulns} vulnerabilit${totalVulns === 1 ? "y" : "ies"} across ${affectedPkgs} package${affectedPkgs === 1 ? "" : "s"}:`);
+        lines.push(
+          `Found ${totalVulns} vulnerabilit${totalVulns === 1 ? "y" : "ies"} across ${affectedPkgs} package${affectedPkgs === 1 ? "" : "s"}:`,
+        );
         for (const sev of SEVERITY_ORDER) {
           const count = vulnCounts[sev] ?? 0;
           if (count > 0) {
@@ -166,7 +172,9 @@ export function register(server: McpServer) {
 
       if (truncated) {
         lines.push("");
-        lines.push(`⚠️  Only the first ${MAX_BATCH} of ${unique.length} dependencies were checked.`);
+        lines.push(
+          `⚠️  Only the first ${MAX_BATCH} of ${unique.length} dependencies were checked.`,
+        );
       }
 
       lines.push("");

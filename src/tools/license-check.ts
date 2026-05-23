@@ -8,23 +8,57 @@ import type { Ecosystem } from "../types/index.js";
 // Licenses allowed under each policy
 const POLICY_ALLOWLISTS: Record<"permissive" | "copyleft", Set<string>> = {
   permissive: new Set([
-    "MIT", "ISC", "BSD-2-Clause", "BSD-3-Clause", "Apache-2.0", "0BSD",
-    "Unlicense", "CC0-1.0", "BlueOak-1.0.0", "Python-2.0",
+    "MIT",
+    "ISC",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "Apache-2.0",
+    "0BSD",
+    "Unlicense",
+    "CC0-1.0",
+    "BlueOak-1.0.0",
+    "Python-2.0",
   ]),
   copyleft: new Set([
-    "MIT", "ISC", "BSD-2-Clause", "BSD-3-Clause", "Apache-2.0", "0BSD",
-    "Unlicense", "CC0-1.0", "BlueOak-1.0.0", "Python-2.0",
-    "LGPL-2.0", "LGPL-2.1", "LGPL-3.0", "MPL-2.0", "EPL-1.0", "EPL-2.0",
-    "GPL-2.0", "GPL-2.0-only", "GPL-2.0-or-later",
-    "GPL-3.0", "GPL-3.0-only", "GPL-3.0-or-later",
-    "CDDL-1.0", "OSL-3.0",
+    "MIT",
+    "ISC",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "Apache-2.0",
+    "0BSD",
+    "Unlicense",
+    "CC0-1.0",
+    "BlueOak-1.0.0",
+    "Python-2.0",
+    "LGPL-2.0",
+    "LGPL-2.1",
+    "LGPL-3.0",
+    "MPL-2.0",
+    "EPL-1.0",
+    "EPL-2.0",
+    "GPL-2.0",
+    "GPL-2.0-only",
+    "GPL-2.0-or-later",
+    "GPL-3.0",
+    "GPL-3.0-only",
+    "GPL-3.0-or-later",
+    "CDDL-1.0",
+    "OSL-3.0",
   ]),
 };
 
-function classifyLicense(license: string): "permissive" | "weak-copyleft" | "copyleft" | "network-copyleft" | "unknown" {
+function classifyLicense(
+  license: string,
+): "permissive" | "weak-copyleft" | "copyleft" | "network-copyleft" | "unknown" {
   if (NETWORK_COPYLEFT.has(license)) return "network-copyleft";
   if (COPYLEFT_LICENSES.has(license)) {
-    if (license.startsWith("LGPL") || license === "MPL-2.0" || license === "EPL-1.0" || license === "EPL-2.0" || license === "CDDL-1.0") {
+    if (
+      license.startsWith("LGPL") ||
+      license === "MPL-2.0" ||
+      license === "EPL-1.0" ||
+      license === "EPL-2.0" ||
+      license === "CDDL-1.0"
+    ) {
       return "weak-copyleft";
     }
     return "copyleft";
@@ -45,7 +79,9 @@ export function register(server: McpServer) {
         lockfile_content: z.string().describe("Full text content of the lockfile"),
         lockfile_name: z
           .string()
-          .describe("Filename: package-lock.json, yarn.lock, pnpm-lock.yaml, requirements.txt, Cargo.lock, go.sum, Gemfile.lock"),
+          .describe(
+            "Filename: package-lock.json, yarn.lock, pnpm-lock.yaml, requirements.txt, Cargo.lock, go.sum, Gemfile.lock",
+          ),
         policy: z
           .enum(["permissive", "copyleft", "none"])
           .default("permissive")
@@ -108,8 +144,7 @@ export function register(server: McpServer) {
         const dep = toFetch[i];
         if (!dep) continue;
         const result = licenseResults[i];
-        const licenses =
-          result?.status === "fulfilled" ? (result.value.licenses ?? []) : [];
+        const licenses = result?.status === "fulfilled" ? (result.value.licenses ?? []) : [];
 
         // Count each license
         for (const l of licenses) {
@@ -131,12 +166,18 @@ export function register(server: McpServer) {
           }
         }
 
-        const classification = licenses.length === 0
-          ? "unknown"
-          : licenses.map(classifyLicense).join(", ");
+        const classification =
+          licenses.length === 0 ? "unknown" : licenses.map(classifyLicense).join(", ");
 
         if (flagged || licenses.some((l) => classifyLicense(l) !== "permissive")) {
-          results.push({ name: dep.name, version: dep.version, licenses, classification, flagged, reason });
+          results.push({
+            name: dep.name,
+            version: dep.version,
+            licenses,
+            classification,
+            flagged,
+            reason,
+          });
         }
       }
 
@@ -158,7 +199,9 @@ export function register(server: McpServer) {
           lines.push(`   All scanned packages comply with the ${policy} policy.`);
         }
       } else {
-        lines.push(`⚠️  ${flagged.length} license violation${flagged.length === 1 ? "" : "s"} found`);
+        lines.push(
+          `⚠️  ${flagged.length} license violation${flagged.length === 1 ? "" : "s"} found`,
+        );
         lines.push("─".repeat(50));
         for (const r of flagged) {
           const lic = r.licenses.length > 0 ? r.licenses.join(", ") : "unknown";

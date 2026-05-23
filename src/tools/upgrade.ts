@@ -87,7 +87,9 @@ export function register(server: McpServer) {
       ];
 
       if (safeVersions.length === 0) {
-        lines.push(`❌ No safe upgrade found — all ${toCheck.length} newer versions have known vulnerabilities.`);
+        lines.push(
+          `❌ No safe upgrade found — all ${toCheck.length} newer versions have known vulnerabilities.`,
+        );
         lines.push("");
         lines.push("Consider:");
         lines.push("  • Checking if a patch is in progress via hound_advisories");
@@ -105,7 +107,9 @@ export function register(server: McpServer) {
         lines.push("");
 
         if (latestVulns.length > 0 && safeVersions.at(-1) !== latestVersion) {
-          lines.push(`⚠️  Latest version (${latestVersion}) still has ${latestVulns.length} known vuln(s).`);
+          lines.push(
+            `⚠️  Latest version (${latestVersion}) still has ${latestVulns.length} known vuln(s).`,
+          );
           lines.push(`   Recommended: upgrade to ${latest}`);
         } else {
           lines.push(`💡 Recommended: upgrade to ${latest}`);

@@ -21,10 +21,7 @@ export default tseslint.config(
     },
     rules: {
       "@typescript-eslint/no-deprecated": "error",
-      "@typescript-eslint/restrict-template-expressions": [
-        "error",
-        { allowNumber: true },
-      ],
+      "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
     },
   },
   {
