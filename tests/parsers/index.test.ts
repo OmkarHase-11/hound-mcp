@@ -400,4 +400,40 @@ GEM
     expect(deps).toContainEqual({ name: "net-ssh", version: "7.0.1", ecosystem: "rubygems" });
     expect(deps).toContainEqual({ name: "i18n", version: "1.12.0", ecosystem: "rubygems" });
   });
+  });
+
+// ---------------------------------------------------------------------------
+// pubspec.lock
+// ---------------------------------------------------------------------------
+
+describe("pubspec.lock", () => {
+  it("parses packages and ignores sdks section", () => {
+    const content = `packages:
+  http:
+    dependency: "direct main"
+    description:
+      name: http
+      sha256: "abc"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
+  path:
+    dependency: transitive
+    description:
+      name: path
+      sha256: "def"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.8.3"
+sdks:
+  dart: ">=3.0.0 <4.0.0"
+  flutter: ">=3.0.0"
+`;
+
+    const deps = parseLockfile("pubspec.lock", content);
+
+    expect(deps).toHaveLength(2);
+    expect(deps).toContainEqual({ name: "http", version: "1.1.0", ecosystem: "pub" });
+    expect(deps).toContainEqual({ name: "path", version: "1.8.3", ecosystem: "pub" });
+  });
 });

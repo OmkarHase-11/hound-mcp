@@ -1,7 +1,7 @@
 export interface ParsedDep {
   name: string;
   version: string;
-  ecosystem: "npm" | "pypi" | "cargo" | "go" | "rubygems";
+  ecosystem: "npm" | "pypi" | "cargo" | "go" | "rubygems" | "pub"; 
 }
 
 /**
@@ -18,6 +18,7 @@ export function parseLockfile(filename: string, content: string): ParsedDep[] | 
   if (base === "Cargo.lock") return parseCargoLock(content);
   if (base === "go.sum") return parseGoSum(content);
   if (base === "Gemfile.lock") return parseGemfileLock(content);
+  if (base === "pubspec.lock") return parsePubspecLock(content);
 
   return null;
 }
@@ -258,6 +259,46 @@ function parseGemfileLock(content: string): ParsedDep[] {
           version = platformMatch[1];
         }
         deps.push({ name: match[1], version, ecosystem: "rubygems" });
+      }
+    }
+  }
+
+  return deps;
+}
+
+// ---------------------------------------------------------------------------
+// pubspec.lock (Dart/Flutter)
+// ---------------------------------------------------------------------------
+function parsePubspecLock(content: string): ParsedDep[] {
+  const deps: ParsedDep[] = [];
+  const lines = content.split("\n");
+  let inPackages = false;
+  let currentName: string | null = null;
+
+  for (const line of lines) {
+    if (line.startsWith("packages:")) {
+      inPackages = true;
+      continue;
+    }
+
+    if (line.startsWith("sdks:")) {
+      inPackages = false;
+      continue;
+    }
+
+    if (!inPackages) continue;
+
+    const nameMatch = /^ {2}(\S+):/.exec(line);
+    if (nameMatch?.[1]) {
+      currentName = nameMatch[1];
+      continue;
+    }
+
+    if (currentName) {
+      const versionMatch = /^ {4}version:\s+"?([^\s"]+)"?/.exec(line);
+      if (versionMatch?.[1]) {
+        deps.push({ name: currentName, version: versionMatch[1], ecosystem: "pub" });
+        currentName = null;
       }
     }
   }
