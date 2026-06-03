@@ -21,6 +21,7 @@ const ECOSYSTEM_MAP: Record<Ecosystem, string> = {
   cargo: "cargo",
   nuget: "nuget",
   rubygems: "rubygems",
+  pub: "pub",
 };
 
 export interface DepsDevVersionKey {
