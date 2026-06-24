@@ -52,6 +52,7 @@ function classifyLicense(
   license: string,
 ): "permissive" | "weak-copyleft" | "copyleft" | "network-copyleft" | "unknown" {
   if (NETWORK_COPYLEFT.has(license)) return "network-copyleft";
+
   if (COPYLEFT_LICENSES.has(license)) {
     if (
       license.startsWith("LGPL") ||
@@ -62,9 +63,12 @@ function classifyLicense(
     ) {
       return "weak-copyleft";
     }
+
     return "copyleft";
   }
+
   if (POLICY_ALLOWLISTS.permissive.has(license)) return "permissive";
+
   return "unknown";
 }
 
@@ -105,6 +109,17 @@ export function register(server: McpServer) {
         };
       }
 
+      if (deps.some((dep) => dep.ecosystem === "pub")) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "License checking for pubspec.lock is not currently supported because deps.dev does not support the Pub ecosystem.",
+            },
+          ],
+        };
+      }
+
       if (deps.length === 0) {
         return {
           content: [{ type: "text", text: `No dependencies found in ${lockfile_name}.` }],
@@ -115,7 +130,9 @@ export function register(server: McpServer) {
       const seen = new Set<string>();
       const unique = deps.filter((d) => {
         const key = `${d.name}@${d.version}`;
+
         if (seen.has(key)) return false;
+
         seen.add(key);
         return true;
       });
@@ -143,13 +160,15 @@ export function register(server: McpServer) {
 
       for (let i = 0; i < toFetch.length; i++) {
         const dep = toFetch[i];
+
         if (!dep) continue;
+
         const result = licenseResults[i];
         const licenses = result?.status === "fulfilled" ? (result.value.licenses ?? []) : [];
 
         // Count each license
-        for (const l of licenses) {
-          licenseCount[l] = (licenseCount[l] ?? 0) + 1;
+        for (const license of licenses) {
+          licenseCount[license] = (licenseCount[license] ?? 0) + 1;
         }
 
         // Determine if flagged
@@ -160,7 +179,8 @@ export function register(server: McpServer) {
           flagged = policy !== "none";
           reason = "License unknown";
         } else if (allowlist) {
-          const violating = licenses.filter((l) => !allowlist.has(l));
+          const violating = licenses.filter((license) => !allowlist.has(license));
+
           if (violating.length > 0) {
             flagged = true;
             reason = `License not allowed under ${policy} policy: ${violating.join(", ")}`;
@@ -170,7 +190,7 @@ export function register(server: McpServer) {
         const classification =
           licenses.length === 0 ? "unknown" : licenses.map(classifyLicense).join(", ");
 
-        if (flagged || licenses.some((l) => classifyLicense(l) !== "permissive")) {
+        if (flagged || licenses.some((license) => classifyLicense(license) !== "permissive")) {
           results.push({
             name: dep.name,
             version: dep.version,
@@ -182,8 +202,8 @@ export function register(server: McpServer) {
         }
       }
 
-      const flagged = results.filter((r) => r.flagged);
-      const infoOnly = results.filter((r) => !r.flagged);
+      const flagged = results.filter((result) => result.flagged);
+      const infoOnly = results.filter((result) => !result.flagged);
 
       const lines: string[] = [
         "🔏 Hound License Check",
@@ -195,7 +215,8 @@ export function register(server: McpServer) {
       ];
 
       if (flagged.length === 0) {
-        lines.push(`✅ No license violations found`);
+        lines.push("✅ No license violations found");
+
         if (policy !== "none") {
           lines.push(`   All scanned packages comply with the ${policy} policy.`);
         }
@@ -204,11 +225,13 @@ export function register(server: McpServer) {
           `⚠️  ${flagged.length} license violation${flagged.length === 1 ? "" : "s"} found`,
         );
         lines.push("─".repeat(50));
-        for (const r of flagged) {
-          const lic = r.licenses.length > 0 ? r.licenses.join(", ") : "unknown";
-          lines.push(`  ${r.name}@${r.version}`);
-          lines.push(`    License: ${lic}`);
-          lines.push(`    ${r.reason}`);
+
+        for (const result of flagged) {
+          const license = result.licenses.length > 0 ? result.licenses.join(", ") : "unknown";
+
+          lines.push(`  ${result.name}@${result.version}`);
+          lines.push(`    License: ${license}`);
+          lines.push(`    ${result.reason}`);
           lines.push("");
         }
       }
@@ -216,10 +239,12 @@ export function register(server: McpServer) {
       if (infoOnly.length > 0) {
         lines.push("─".repeat(50));
         lines.push("Non-permissive licenses (not violations):");
-        for (const r of infoOnly) {
-          const lic = r.licenses.join(", ");
-          lines.push(`  ${r.name}@${r.version}  ${lic}`);
+
+        for (const result of infoOnly) {
+          const license = result.licenses.join(", ");
+          lines.push(`  ${result.name}@${result.version}  ${license}`);
         }
+
         lines.push("");
       }
 
@@ -231,9 +256,11 @@ export function register(server: McpServer) {
       if (topLicenses.length > 0) {
         lines.push("─".repeat(50));
         lines.push("License distribution:");
-        for (const [lic, count] of topLicenses) {
-          lines.push(`  ${String(count).padStart(4)}×  ${lic}`);
+
+        for (const [license, count] of topLicenses) {
+          lines.push(`  ${String(count).padStart(4)}×  ${license}`);
         }
+
         lines.push("");
       }
 

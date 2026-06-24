@@ -22,13 +22,13 @@ export function register(server: McpServer) {
     "hound_audit",
     {
       description:
-        "Scan a project's lockfile for dependency risks. Parses package-lock.json, yarn.lock, pnpm-lock.yaml, requirements.txt, Cargo.lock, go.sum, or Gemfile.lock and batch-queries OSV for vulnerabilities across all dependencies.",
+        "Scan a project's lockfile for dependency risks. Parses package-lock.json, yarn.lock, pnpm-lock.yaml, requirements.txt, Cargo.lock, go.sum, Gemfile.lock, or pubspec.lock and batch-queries OSV for vulnerabilities across all dependencies.",
       inputSchema: {
         lockfile_content: z.string().describe("Full text content of the lockfile"),
         lockfile_name: z
           .string()
           .describe(
-            "Filename to determine format: package-lock.json, yarn.lock, pnpm-lock.yaml, requirements.txt, Cargo.lock, go.sum, Gemfile.lock",
+            "Filename to determine format: package-lock.json, yarn.lock, pnpm-lock.yaml, requirements.txt, Cargo.lock, go.sum, Gemfile.lock, or pubspec.lock",
           ),
       },
     },
@@ -40,7 +40,11 @@ export function register(server: McpServer) {
           content: [
             {
               type: "text",
+<<<<<<< HEAD
               text: formatUnsupportedLockfileMessage(lockfile_name),
+=======
+              text: `Unsupported lockfile format: ${lockfile_name}\n\nSupported formats: package-lock.json, yarn.lock, pnpm-lock.yaml, requirements.txt, Cargo.lock, go.sum, Gemfile.lock, or pubspec.lock`,
+>>>>>>> de59d46 (Complete Pub ecosystem integration)
             },
           ],
         };
@@ -94,9 +98,11 @@ export function register(server: McpServer) {
         const dep = toCheck[i];
         const vulns = vulnResults[i] ?? [];
         if (!dep) continue;
+
         for (const v of vulns) {
           const sev = extractSeverity(v);
           vulnCounts[sev] = (vulnCounts[sev] ?? 0) + 1;
+
           findings.push({
             name: dep.name,
             version: dep.version,
@@ -126,8 +132,10 @@ export function register(server: McpServer) {
         lines.push(
           `Found ${totalVulns} vulnerabilit${totalVulns === 1 ? "y" : "ies"} across ${affectedPkgs} package${affectedPkgs === 1 ? "" : "s"}:`,
         );
+
         for (const sev of SEVERITY_ORDER) {
           const count = vulnCounts[sev] ?? 0;
+
           if (count > 0) {
             const icon = SEVERITY_ICON[sev] ?? "⚪";
             lines.push(`  ${icon} ${count} ${sev.toLowerCase()}`);
@@ -152,6 +160,7 @@ export function register(server: McpServer) {
 
           // Group by package
           const byPkg: Record<string, Finding[]> = {};
+
           for (const f of group) {
             const key = `${f.name}@${f.version}`;
             (byPkg[key] ??= []).push(f);
@@ -159,6 +168,7 @@ export function register(server: McpServer) {
 
           for (const [pkg, pkgFindings] of Object.entries(byPkg)) {
             lines.push(`  ${pkg}`);
+
             for (const f of pkgFindings) {
               lines.push(`    ${f.id}: ${f.summary}`);
             }
