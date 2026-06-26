@@ -82,11 +82,15 @@ export function register(server: McpServer) {
         "Scan a lockfile for license compliance. Resolves licenses for every dependency and flags packages that violate the chosen policy (permissive, copyleft, or none).",
       inputSchema: {
         lockfile_content: z.string().describe("Full text content of the lockfile"),
+
+        // pubspec.lock is intentionally omitted here because deps.dev does not
+        // support the Pub ecosystem. The handler below returns an explicit message.
         lockfile_name: z
           .string()
           .describe(
             "Filename: package-lock.json, yarn.lock, pnpm-lock.yaml, requirements.txt, Cargo.lock, go.sum, Gemfile.lock",
           ),
+
         policy: z
           .enum(["permissive", "copyleft", "none"])
           .default("permissive")
@@ -109,6 +113,7 @@ export function register(server: McpServer) {
         };
       }
 
+      // Pub dependencies can be parsed, but deps.dev cannot resolve their licenses.
       if (deps.some((dep) => dep.ecosystem === "pub")) {
         return {
           content: [
@@ -128,8 +133,9 @@ export function register(server: McpServer) {
 
       // Deduplicate
       const seen = new Set<string>();
-      const unique = deps.filter((d) => {
-        const key = `${d.name}@${d.version}`;
+
+      const unique = deps.filter((dep) => {
+        const key = `${dep.name}@${dep.version}`;
 
         if (seen.has(key)) return false;
 
@@ -140,9 +146,9 @@ export function register(server: McpServer) {
       const toFetch = unique.slice(0, MAX_FETCH);
       const truncated = unique.length > MAX_FETCH;
 
-      // Fetch licenses in parallel (ignore failures)
+      // Fetch licenses in parallel and ignore individual request failures.
       const licenseResults = await Promise.allSettled(
-        toFetch.map((d) => getVersion(d.ecosystem as Ecosystem, d.name, d.version)),
+        toFetch.map((dep) => getVersion(dep.ecosystem as Ecosystem, dep.name, dep.version)),
       );
 
       interface LicenseResult {
@@ -158,20 +164,21 @@ export function register(server: McpServer) {
       const results: LicenseResult[] = [];
       const licenseCount: Record<string, number> = {};
 
-      for (let i = 0; i < toFetch.length; i++) {
-        const dep = toFetch[i];
+      for (let index = 0; index < toFetch.length; index++) {
+        const dep = toFetch[index];
 
         if (!dep) continue;
 
-        const result = licenseResults[i];
-        const licenses = result?.status === "fulfilled" ? (result.value.licenses ?? []) : [];
+        const result = licenseResults[index];
+        const licenses =
+          result?.status === "fulfilled" ? (result.value.licenses ?? []) : [];
 
-        // Count each license
+        // Count each license.
         for (const license of licenses) {
           licenseCount[license] = (licenseCount[license] ?? 0) + 1;
         }
 
-        // Determine if flagged
+        // Determine whether the package violates the selected policy.
         let flagged = false;
         let reason = "";
 
@@ -188,9 +195,14 @@ export function register(server: McpServer) {
         }
 
         const classification =
-          licenses.length === 0 ? "unknown" : licenses.map(classifyLicense).join(", ");
+          licenses.length === 0
+            ? "unknown"
+            : licenses.map(classifyLicense).join(", ");
 
-        if (flagged || licenses.some((license) => classifyLicense(license) !== "permissive")) {
+        if (
+          flagged ||
+          licenses.some((license) => classifyLicense(license) !== "permissive")
+        ) {
           results.push({
             name: dep.name,
             version: dep.version,
@@ -210,7 +222,9 @@ export function register(server: McpServer) {
         "═".repeat(50),
         `Lockfile:  ${lockfile_name}`,
         `Policy:    ${policy}`,
-        `Scanned:   ${toFetch.length} packages${truncated ? ` (first ${MAX_FETCH} of ${unique.length})` : ""}`,
+        `Scanned:   ${toFetch.length} packages${
+          truncated ? ` (first ${MAX_FETCH} of ${unique.length})` : ""
+        }`,
         "",
       ];
 
@@ -222,12 +236,17 @@ export function register(server: McpServer) {
         }
       } else {
         lines.push(
-          `⚠️  ${flagged.length} license violation${flagged.length === 1 ? "" : "s"} found`,
+          `⚠️  ${flagged.length} license violation${
+            flagged.length === 1 ? "" : "s"
+          } found`,
         );
         lines.push("─".repeat(50));
 
         for (const result of flagged) {
-          const license = result.licenses.length > 0 ? result.licenses.join(", ") : "unknown";
+          const license =
+            result.licenses.length > 0
+              ? result.licenses.join(", ")
+              : "unknown";
 
           lines.push(`  ${result.name}@${result.version}`);
           lines.push(`    License: ${license}`);
@@ -267,7 +286,12 @@ export function register(server: McpServer) {
       lines.push("Source: deps.dev");
 
       return {
-        content: [{ type: "text", text: lines.join("\n") }],
+        content: [
+          {
+            type: "text",
+            text: lines.join("\n"),
+          },
+        ],
       };
     },
   );
